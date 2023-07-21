@@ -6,15 +6,12 @@ jobs:
     name: 'Wiz-cli IaC Scan'
     runs-on: ubuntu-latest
     env:
-      SCAN_PATH: "terraform/aws/" # Set the relative path in the repo to scan
+      SCAN_PATH: "terraform" # Set the relative path in the repo to scan
       POLICY: "chris-wang-se-iac" # Set the desired Wiz-cli policy to use
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-    strategy:
-      matrix:
-        coverage: ["ec2", "lambda", "s3"]
     permissions:
       # required for all workflows
       security-events: write
@@ -25,7 +22,7 @@ jobs:
     steps:
     # Checkout the repository to the GitHub Actions runner
     - name: Check out repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Download Wiz-cli
       run: curl -o wizcli https://wizcli.app.wiz.io/wizcli && chmod +x wizcli
@@ -38,18 +35,20 @@ jobs:
       env:
         WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
-        
+    
     - name: Run wiz-cli IaC scan
-      run: ./wizcli iac scan --path ${{env.SCAN_PATH}}${{ matrix.coverage }}.tf --policy "$POLICY" --format sarif > ${{ matrix.coverage }}.sarif
+      run: ./wizcli iac scan --path $SCAN_PATH --policy "$POLICY" 
+    # run: ./wizcli iac scan --path $SCAN_PATH --policy "$POLICY" --format sarif  | tee results.sarif
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.coverage }}
-        path: ${{ matrix.coverage }}.sarif
+    # - name: Upload artifact
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: results
+    #     path: results.sarif
 
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v2
-      continue-on-error: true
-      with:
-        sarif_file: ${{ matrix.coverage }}.sarif
-        category: wiz
+    # - name: Optional - Upload SARIF file
+    #   uses: github/codeql-action/upload-sarif@v2
+    #   continue-on-error: false
+    #   with:
+    #     sarif_file: results.sarif
+    #     category: wiz
