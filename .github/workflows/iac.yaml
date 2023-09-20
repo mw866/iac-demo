@@ -5,9 +5,6 @@ jobs:
   wiz-cli-iac-scan:
     name: 'Wiz-cli IaC Scan'
     runs-on: ubuntu-latest
-    env:
-      SCAN_PATH: "." # Set the relative path in the repo to scan
-      POLICY: "chris-wang-se-iac" # Set the desired Wiz-cli policy to use
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
@@ -37,7 +34,8 @@ jobs:
         WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
     
     - name: Run wiz-cli IaC scan
-      run: ./wizcli iac scan --path $SCAN_PATH --policy "$POLICY" --format sarif > results.sarif
+      run: ./wizcli iac scan --path ${{ vars.SCAN_PATH }} --policy  ${{ vars.POLICY }} --project ${{ vars.PROJECT }}  --format sarif | tee results.sarif
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
