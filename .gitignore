@@ -36,4 +36,5 @@ credentials.json
 
 .DS_Store
 twistcli
+builds/
 
