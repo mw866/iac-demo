@@ -107,7 +107,7 @@ resource "aws_instance" "cspmInstance" {
   ami = "ami-08a52ddb321b32a8c"
   instance_type = "t2.micro"
   iam_instance_profile = aws_iam_role.cspm_full_access_role.name
-
+  disable_api_termination = false
 
   availability_zone = "us-east-1a"
   key_name = "cspmKey"
