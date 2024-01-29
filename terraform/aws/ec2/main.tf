@@ -9,6 +9,12 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = "us-east-1"
+    default_tags {
+    tags = {
+      Owner   = "Chris-Wang-SE"
+      Project = "demo"
+    }
+  }
 }
 
 # Create a vpc
@@ -106,21 +112,21 @@ resource "aws_eip" "cspm_eip" {
 resource "aws_instance" "cspmInstance" {
   ami = "ami-08a52ddb321b32a8c"
   instance_type = "t2.micro"
-  iam_instance_profile = aws_iam_role.cspm_full_access_role.name
-  disable_api_termination = false
+  # iam_instance_profile = aws_iam_role.cspm_full_access_role.name
+  disable_api_termination = true
 
   availability_zone = "us-east-1a"
-  key_name = "cspmKey"
+  # key_name = "cspmKey"
 
   network_interface{
     device_index = 0
     network_interface_id = aws_network_interface.cspmWebServer.id
   }
 
-  provisioner "file" {
-    source      = "./sensitive-data.txt"  # Path to your local credentials file
-    destination = "/path/to/credentials.txt"  # Destination path on the EC2 instance
-  }
+  # provisioner "file" {
+  #   source      = "./sensitive-data.txt"  # Path to your local credentials file
+  #   destination = "/path/to/credentials.txt"  # Destination path on the EC2 instance
+  # }
 
   user_data = <<-EOF
               #!/bin/bash
@@ -147,7 +153,7 @@ resource "aws_ebs_volume" "cspm_ebs_volume" {
 
 # Create IAM role for EC2 instance with full access
 resource "aws_iam_role" "cspm_full_access_role" {
-  name = "example-ec2-instance-role"
+  name = "cspm_full_access_role"
 
   assume_role_policy = jsonencode({
     Statement = [
@@ -162,13 +168,26 @@ resource "aws_iam_role" "cspm_full_access_role" {
   })
 }
 
-# Attach a policy that grants full access to EC2 instance
+# Attach IAM Role policy 
 resource "aws_iam_role_policy_attachment" "cspm_full_access_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"  # Full access to EC2
+  policy_arn = aws_iam_policy.policy.arn
 
   role = aws_iam_role.cspm_full_access_role.name
 }
 
+data "aws_iam_policy_document" "policy" {
+  statement {
+    effect    = "Allow"
+    actions   = ["ec2:Describe*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "policy" {
+  name        = "test-policy"
+  description = "A test policy"
+  policy      = data.aws_iam_policy_document.policy.json
+}
 
 # Create a Network ACL for the subnet
 resource "aws_network_acl" "cspm_subnet_acl" {
